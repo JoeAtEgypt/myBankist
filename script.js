@@ -75,9 +75,11 @@ let currentAccount;
 const displayMovements = function (movements, sort = false) {
   containerMovements.innerHTML = '';
 
-  const movs = sort ? movements.sort() : movements;
+  // slice: to actually take a copy of movements array
+  // more readable and useful than (...) spread operator
+  const movs = sort ? movements.slice().sort((a, b) => a - b) : movements;
 
-  movements.forEach((mov, i) => {
+  movs.forEach((mov, i) => {
     const type = mov > 0 ? 'deposit' : 'withdrawal';
     const html = `<div class="movements__row">
           <div class="movements__type movements__type--${type}">${
@@ -215,6 +217,13 @@ const requestLoan = function (event) {
   inputLoanAmount.value = '';
 };
 
+let sorted = false;
+const sortMovements = function (event) {
+  event.preventDefault();
+
+  displayMovements(currentAccount.movements, !sorted);
+  sorted = !sorted ;
+};
 // Excecuting Login
 btnLogin.addEventListener('click', logIn);
 
@@ -226,3 +235,6 @@ btnClose.addEventListener('click', closeAccount);
 
 // Executing loan
 btnLoan.addEventListener('click', requestLoan);
+
+// Sort Movements
+btnSort.addEventListener('click', sortMovements);
