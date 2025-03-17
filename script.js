@@ -1,6 +1,7 @@
 'use strict';
 
-// Data
+/*
+// Data 1
 const account1 = {
   owner: 'Jonas Schmedtmann',
   movements: [200, 450, -400, 3000, -650, -130, 70, 1300],
@@ -30,6 +31,50 @@ const account4 = {
 };
 
 const accounts = [account1, account2, account3, account4];
+*/
+
+// DATA 2
+const account1 = {
+  owner: 'Jonas Schmedtmann',
+  movements: [200, 455.23, -306.5, 25000, -642.21, -133.9, 79.97, 1300],
+  interestRate: 1.2, // %
+  pin: 1111,
+
+  movementsDates: [
+    '2019-11-18T21:31:17.178Z',
+    '2019-12-23T07:42:02.383Z',
+    '2020-01-28T09:15:04.904Z',
+    '2020-04-01T10:17:24.185Z',
+    '2020-05-08T14:11:59.604Z',
+    '2020-05-27T17:01:17.194Z',
+    '2020-07-11T23:36:17.929Z',
+    '2020-07-12T10:51:36.790Z',
+  ],
+  currency: 'EUR',
+  locale: 'pt-PT', // de-DE
+};
+
+const account2 = {
+  owner: 'Jessica Davis',
+  movements: [5000, 3400, -150, -790, -3210, -1000, 8500, -30],
+  interestRate: 1.5,
+  pin: 2222,
+
+  movementsDates: [
+    '2019-11-01T13:15:33.035Z',
+    '2019-11-30T09:48:16.867Z',
+    '2019-12-25T06:04:23.907Z',
+    '2020-01-25T14:18:46.235Z',
+    '2020-02-05T16:33:06.386Z',
+    '2020-04-10T14:43:26.374Z',
+    '2020-06-25T18:49:59.371Z',
+    '2020-07-26T12:01:20.894Z',
+  ],
+  currency: 'USD',
+  locale: 'en-US',
+};
+
+const accounts = [account1, account2];
 
 // Elements
 const labelWelcome = document.querySelector('.welcome');
@@ -57,6 +102,9 @@ const inputLoanAmount = document.querySelector('.form__input--loan-amount');
 const inputCloseUsername = document.querySelector('.form__input--user');
 const inputClosePin = document.querySelector('.form__input--pin');
 
+// Global Functions
+const padStartDate = date => `${date}`.padStart(2, 0);
+
 // 'Steven Thomas Williams' -> 'stw'
 // Adding username in each account
 (function (accounts) {
@@ -81,11 +129,19 @@ const displayMovements = function (movements, sort = false) {
 
   movs.forEach((mov, i) => {
     const type = mov > 0 ? 'deposit' : 'withdrawal';
+    const date = new Date(
+      currentAccount.movementsDates[movements.indexOf(mov)]
+    );
+    const formattedDate = `${padStartDate(date.getDate())}/${padStartDate(
+      date.getMonth() + 1
+    )}/${date.getFullYear()}`;
+
     const html = `<div class="movements__row">
           <div class="movements__type movements__type--${type}">${
       i + 1
     } ${type}</div>
-          <div class="movements__value">${mov}€</div>
+              <div class="movements__date">${formattedDate}</div>
+          <div class="movements__value">${mov.toFixed(2)}€</div>
         </div>`;
     containerMovements.insertAdjacentHTML('afterbegin', html);
   });
@@ -99,12 +155,12 @@ const calcDisplaySummary = account => {
   const incomes = account.movements
     .filter(mov => mov > 0)
     .reduce((mov, acc) => mov + acc, 0);
-  labelSumIn.textContent = `${incomes}€`;
+  labelSumIn.textContent = `${incomes.toFixed(2)}€`;
 
   const outcomes = account.movements
     .filter(mov => mov < 0)
     .reduce((mov, acc) => mov + acc, 0);
-  labelSumOut.textContent = `${Math.abs(outcomes)}€`;
+  labelSumOut.textContent = `${Math.abs(outcomes).toFixed(2)}€`;
 
   const interest = account.movements
     .filter(mov => mov > 0)
@@ -113,7 +169,7 @@ const calcDisplaySummary = account => {
       return int >= 1;
     })
     .reduce((acc, int) => acc + int, 0);
-  labelSumInterest.textContent = `${interest}€`;
+  labelSumInterest.textContent = `${interest.toFixed(2)}€`;
 };
 
 const updateUI = function () {
@@ -122,7 +178,14 @@ const updateUI = function () {
 
   // Display Balance
   calculateBalance(currentAccount);
-  labelBalance.textContent = `${currentAccount.balance}€`;
+  labelBalance.textContent = `${currentAccount.balance.toFixed(2)}€`;
+
+  // Created NOW Date
+  const now = new Date();
+  const formattedNow = `${padStartDate(now.getDate())}/${padStartDate(
+    now.getMonth() + 1
+  )}/${now.getFullYear()}`;
+  labelDate.textContent = formattedNow;
 
   // Display Summary
   calcDisplaySummary(currentAccount);
@@ -135,7 +198,7 @@ const logIn = event => {
   currentAccount = accounts.find(
     acc =>
       acc.username === inputLoginUsername.value &&
-      acc.pin === Number(inputLoginPin.value)
+      acc.pin === +inputLoginPin.value
   );
   if (currentAccount) {
     // Display UI
@@ -149,6 +212,7 @@ const logIn = event => {
     // Reset input fields
     inputLoginUsername.value = inputLoginPin.value = '';
     inputLoginPin.blur();
+    console.log(currentAccount);
     updateUI();
   }
 };
@@ -157,7 +221,7 @@ const transferMoney = function (event) {
   // Prevent form from submitting
   event.preventDefault();
 
-  const amount = Number(inputTransferAmount.value);
+  const amount = +inputTransferAmount.value;
   const recieverAccount = accounts.find(
     account => account.username === inputTransferTo.value
   );
@@ -172,7 +236,12 @@ const transferMoney = function (event) {
   ) {
     // Doing Transfer
     currentAccount.movements.push(-amount);
+
+    // Adding Transfer Date
+    currentAccount.movementsDates.push(new Date().toISOString());
+
     recieverAccount.movements.push(amount);
+    recieverAccount.movementsDates.push(new Date().toISOString());
     updateUI();
   }
 };
@@ -182,7 +251,7 @@ const closeAccount = function (event) {
   event.preventDefault();
 
   const username = inputCloseUsername.value;
-  const pin = Number(inputClosePin.value);
+  const pin = +inputClosePin.value;
 
   // Resetting inputs
   inputCloseUsername.value = inputClosePin.value = '';
@@ -203,11 +272,14 @@ const closeAccount = function (event) {
 const requestLoan = function (event) {
   event.preventDefault();
 
-  const amount = Number(inputLoanAmount.value);
+  const amount = Math.floor(inputLoanAmount.value);
 
   if (amount > 0 && currentAccount?.movements.some(mov => mov > amount * 0.1)) {
     // Adding Loan
     currentAccount.movements.push(amount);
+
+    // Adding Loan Date
+    currentAccount.movementsDates.push(new Date().toISOString());
 
     // Updating Loan
     updateUI();
@@ -222,8 +294,9 @@ const sortMovements = function (event) {
   event.preventDefault();
 
   displayMovements(currentAccount.movements, !sorted);
-  sorted = !sorted ;
+  sorted = !sorted;
 };
+
 // Excecuting Login
 btnLogin.addEventListener('click', logIn);
 
