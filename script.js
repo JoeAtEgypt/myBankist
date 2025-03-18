@@ -313,18 +313,20 @@ const requestLoan = function (event) {
   const amount = Math.floor(inputLoanAmount.value);
 
   if (amount > 0 && currentAccount?.movements.some(mov => mov > amount * 0.1)) {
-    // Adding Loan
-    currentAccount.movements.push(amount);
+    setTimeout(function () {
+      // Adding Loan
+      currentAccount.movements.push(amount);
 
-    // Adding Loan Date
-    currentAccount.movementsDates.push(new Date().toISOString());
+      // Adding Loan Date
+      currentAccount.movementsDates.push(new Date().toISOString());
 
-    // Updating Loan
-    updateUI();
+      // Updating Loan
+      updateUI();
+    }, 2500);
+
+    // Resetting the inputs
+    inputLoanAmount.value = '';
   }
-
-  // Resetting the inputs
-  inputLoanAmount.value = '';
 };
 
 let sorted = false;
