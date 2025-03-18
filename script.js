@@ -119,6 +119,7 @@ const padStartDate = date => `${date}`.padStart(2, 0);
 })(accounts);
 
 let currentAccount;
+let numberFormatter;
 
 const formatDate = function (date) {
   const calcDaysPassed = (date1, date2) =>
@@ -130,13 +131,17 @@ const formatDate = function (date) {
   else if (daysPassed === 1) return 'Yesterday';
   else if (daysPassed <= 7) return `${daysPassed} days ago`;
   else {
+    /*
     const formattedDate = `${padStartDate(date.getDate())}/${padStartDate(
       date.getMonth() + 1
     )}/${date.getFullYear()}`;
 
     return formattedDate;
+    */
+    return new Intl.DateTimeFormat(currentAccount.locale).format(date);
   }
 };
+
 const displayMovements = function (movements, sort = false) {
   containerMovements.innerHTML = '';
 
@@ -149,14 +154,14 @@ const displayMovements = function (movements, sort = false) {
     const date = new Date(
       currentAccount.movementsDates.at(movements.indexOf(mov))
     );
-    const displayDate = formatDate(date);
+    const formattedMov = numberFormatter.format(mov.toFixed(2));
 
     const html = `<div class="movements__row">
           <div class="movements__type movements__type--${type}">${
       i + 1
     } ${type}</div>
-              <div class="movements__date">${displayDate}</div>
-          <div class="movements__value">${mov.toFixed(2)}€</div>
+              <div class="movements__date">${formatDate(date)}</div>
+          <div class="movements__value">${formattedMov}</div>
         </div>`;
     containerMovements.insertAdjacentHTML('afterbegin', html);
   });
@@ -170,12 +175,14 @@ const calcDisplaySummary = account => {
   const incomes = account.movements
     .filter(mov => mov > 0)
     .reduce((mov, acc) => mov + acc, 0);
-  labelSumIn.textContent = `${incomes.toFixed(2)}€`;
+  labelSumIn.textContent = `${numberFormatter.format(incomes.toFixed(2))}`;
 
   const outcomes = account.movements
     .filter(mov => mov < 0)
     .reduce((mov, acc) => mov + acc, 0);
-  labelSumOut.textContent = `${Math.abs(outcomes).toFixed(2)}€`;
+  labelSumOut.textContent = `${numberFormatter.format(
+    Math.abs(outcomes).toFixed(2)
+  )}`;
 
   const interest = account.movements
     .filter(mov => mov > 0)
@@ -184,7 +191,9 @@ const calcDisplaySummary = account => {
       return int >= 1;
     })
     .reduce((acc, int) => acc + int, 0);
-  labelSumInterest.textContent = `${interest.toFixed(2)}€`;
+  labelSumInterest.textContent = `${numberFormatter.format(
+    interest.toFixed(2)
+  )}`;
 };
 
 const updateUI = function () {
@@ -193,14 +202,23 @@ const updateUI = function () {
 
   // Display Balance
   calculateBalance(currentAccount);
-  labelBalance.textContent = `${currentAccount.balance.toFixed(2)}€`;
+  labelBalance.textContent = `${numberFormatter.format(
+    currentAccount.balance.toFixed(2)
+  )}`;
 
   // Created NOW Date
   const now = new Date();
-  const formattedNow = `${padStartDate(now.getDate())}/${padStartDate(
-    now.getMonth() + 1
-  )}/${now.getFullYear()}`;
-  labelDate.textContent = formattedNow;
+  const options = {
+    hour: 'numeric',
+    minute: 'numeric',
+    day: 'numeric',
+    month: 'numeric',
+    year: 'numeric',
+  };
+  labelDate.textContent = new Intl.DateTimeFormat(
+    currentAccount.locale,
+    options
+  ).format(now);
 
   // Display Summary
   calcDisplaySummary(currentAccount);
@@ -227,7 +245,12 @@ const logIn = event => {
     // Reset input fields
     inputLoginUsername.value = inputLoginPin.value = '';
     inputLoginPin.blur();
-    console.log(currentAccount);
+
+    numberFormatter = new Intl.NumberFormat(currentAccount.locale, {
+      style: 'currency',
+      currency: currentAccount.currency,
+    });
+
     updateUI();
   }
 };
