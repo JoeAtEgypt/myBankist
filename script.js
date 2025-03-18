@@ -103,7 +103,7 @@ const inputCloseUsername = document.querySelector('.form__input--user');
 const inputClosePin = document.querySelector('.form__input--pin');
 
 // Global Functions
-const padStartDate = date => `${date}`.padStart(2, 0);
+const padStartBy2 = date => `${date}`.padStart(2, 0);
 
 // 'Steven Thomas Williams' -> 'stw'
 // Adding username in each account
@@ -118,8 +118,36 @@ const padStartDate = date => `${date}`.padStart(2, 0);
   );
 })(accounts);
 
-let currentAccount;
-let numberFormatter;
+let currentAccount, numberFormatter, timer;
+
+const startLogOutTimer = function () {
+  const tick = function () {
+    // Call the timer every second
+    const min = padStartBy2(Math.trunc(interval / 60));
+    const sec = padStartBy2(interval % 60);
+    // In each call, print the remaining time to UI
+    labelTimer.textContent = `${min}:${sec}`;
+
+    // When 0 seconds, stop timer and log out user
+    if (interval === 0) {
+      clearInterval(timer);
+
+      // Hide UI
+      containerApp.style.opacity = 0;
+
+      // Display Login message
+      labelWelcome.textContent = 'Log in to get started';
+    }
+    interval--;
+  };
+
+  // Set Time to five minutes
+  let interval = 300;
+
+  tick();
+  const timer = setInterval(tick, 1000);
+  return timer;
+};
 
 const formatDate = function (date) {
   const calcDaysPassed = (date1, date2) =>
@@ -132,7 +160,7 @@ const formatDate = function (date) {
   else if (daysPassed <= 7) return `${daysPassed} days ago`;
   else {
     /*
-    const formattedDate = `${padStartDate(date.getDate())}/${padStartDate(
+    const formattedDate = `${padStartBy2(date.getDate())}/${padStartBy2(
       date.getMonth() + 1
     )}/${date.getFullYear()}`;
 
@@ -246,10 +274,13 @@ const logIn = event => {
     inputLoginUsername.value = inputLoginPin.value = '';
     inputLoginPin.blur();
 
-    numberFormatter = new Intl.NumberFormat(currentAccount.locale, {
+    numberFormatter = new Intl.NumberFormat(currentAccount?.locale, {
       style: 'currency',
-      currency: currentAccount.currency,
+      currency: currentAccount?.currency,
     });
+
+    if (timer) clearInterval(timer);
+    timer = startLogOutTimer();
 
     updateUI();
   }
@@ -281,6 +312,10 @@ const transferMoney = function (event) {
     recieverAccount.movements.push(amount);
     recieverAccount.movementsDates.push(new Date().toISOString());
     updateUI();
+
+    // Reset Timer
+    clearInterval(timer);
+    timer = startLogOutTimer();
   }
 };
 
@@ -322,6 +357,10 @@ const requestLoan = function (event) {
 
       // Updating Loan
       updateUI();
+
+      // Reset Timer
+      clearInterval(timer);
+      timer = startLogOutTimer();
     }, 2500);
 
     // Resetting the inputs
